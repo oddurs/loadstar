@@ -1,0 +1,319 @@
+# Ultimate Dotfiles - Git Ignore Configuration
+
+# ==========================
+# === Secrets & Keys ===
+# ==========================
+
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+id_ecdsa*
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+.secrets
+*.age.decrypted
+
+# Age keys (except example)
+key.txt
+!key.txt.example
+
+# GPG keys
+*.gpg
+*.asc
+secring.*
+
+# SSH configs with secrets
+config.ssh
+known_hosts
+authorized_keys
+
+# ==========================
+# === OS Generated ===
+# ==========================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==========================
+# === Development ===
+# ==========================
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+.nyc_output
+
+# Dependency directories
+node_modules/
+jspm_packages/
+bower_components/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+env/
+.venv
+.env
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Rust
+target/
+# Note: Cargo.lock is committed for binary crates (reproducible builds)
+
+# ==========================
+# === IDEs & Editors ===
+# ==========================
+
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IntelliJ
+.idea/
+*.swp
+*.swo
+*~
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime Text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+*.sublime-workspace
+*.sublime-project
+
+# ==========================
+# === Testing ===
+# ==========================
+
+# Test outputs
+test-results/
+test-output/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary test files
+tmp/
+temp/
+.tmp/
+
+# ==========================
+# === Build & Cache ===
+# ==========================
+
+# Build outputs
+build/
+dist/
+out/
+target/
+bin/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.gatsby/
+
+# Package manager locks (keep yarn.lock, package-lock.json)
+.pnp
+.pnp.js
+
+# ==========================
+# === Dotfiles Specific ===
+# ==========================
+
+# Backup files from dotfiles operations
+*.backup
+*.bak
+*.old
+*~
+
+# Temporary files from chezmoi
+.chezmoi-tmp*
+
+# Local customizations that shouldn't be shared
+*.local
+.local-*
+local.*
+
+# Machine-specific overrides
+local-overrides/
+machine-specific/
+
+# Installation logs
+install.log
+setup.log
+
+# Performance benchmarks (unless tracking)
+benchmark-results/
+performance-logs/
+
+# User-specific test configurations
+test-local/
+.test-local
+
+# ==========================
+# === Documentation ===
+# ==========================
+
+# Generated documentation
+docs/build/
+docs/_build/
+site/
+
+# Temporary markdown files
+*.md.tmp
+
+# ==========================
+# === Misc ===
+# ==========================
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Docker
+.dockerignore
+
+# Archives
+*.7z
+*.jar
+*.rar
+*.zip
+*.tar.gz
+*.tgz
+
+# Certificates
+*.crt
+*.csr
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ==========================
+# === Keep These ===
+# ==========================
+
+# Keep example files
+!*.example
+!*.template
+!*.sample
+
+# Keep important dotfiles
+!.gitignore
+!.editorconfig
+!.pre-commit-config.yaml
+
+# Keep documentation
+!README.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+!LICENSE
+
+# Keep configuration templates
+!*.tmpl
+!template-*

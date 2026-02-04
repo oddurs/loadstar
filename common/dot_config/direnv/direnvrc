@@ -1,0 +1,198 @@
+# Global direnv configuration
+# Provides enhanced project environment management
+
+# Enable layout functions
+source_up_if_exists
+
+# Enhanced mise integration for direnv
+layout_mise() {
+    if has mise; then
+        export MISE_TRUSTED_CONFIG_PATHS="${MISE_TRUSTED_CONFIG_PATHS:-}:$PWD"
+        eval "$(mise hook-env -s bash)"
+    fi
+}
+
+# Python virtual environment
+layout_python() {
+    local python=${1:-python3}
+    [[ $# -gt 0 ]] && shift
+    unset PYTHONHOME
+    if [[ -n $python ]]; then
+        local ve=$($python -c "import pkgutil; print('venv' if pkgutil.find_loader('venv') else ('virtualenv' if pkgutil.find_loader('virtualenv') else ''))")
+        case $ve in
+            "venv")
+                $python -m venv .venv
+                ;;
+            "virtualenv")
+                $python -m virtualenv .venv "$@"
+                ;;
+            *)
+                log_error "Error: neither venv nor virtualenv is available."
+                exit 1
+                ;;
+        esac
+    fi
+    export VIRTUAL_ENV=$PWD/.venv
+    export PYTHONPATH="$VIRTUAL_ENV/lib/python*/site-packages:${PYTHONPATH:-}"
+    PATH="$VIRTUAL_ENV/bin:$PATH"
+}
+
+# Node.js environment
+layout_node() {
+    local version=${1:-lts}
+    if has mise; then
+        mise use node@$version
+        if [[ -f package.json ]]; then
+            npm install
+        fi
+    fi
+    
+    # Add local node_modules to PATH
+    if [[ -d node_modules/.bin ]]; then
+        PATH_add node_modules/.bin
+    fi
+    
+    # Set NODE_ENV if not set
+    export NODE_ENV=${NODE_ENV:-development}
+}
+
+# Go environment
+layout_go() {
+    local version=${1:-latest}
+    if has mise; then
+        mise use go@$version
+    fi
+    
+    # Set GOPATH to project directory
+    export GOPATH=$PWD
+    export GO111MODULE=on
+    PATH_add bin
+}
+
+# Rust environment
+layout_rust() {
+    local version=${1:-stable}
+    if has mise; then
+        mise use rust@$version
+    fi
+    
+    # Cargo home for project
+    export CARGO_HOME=$PWD/.cargo
+    PATH_add .cargo/bin
+}
+
+# Docker environment
+layout_docker() {
+    # Set COMPOSE_PROJECT_NAME based on directory name
+    export COMPOSE_PROJECT_NAME=$(basename "$PWD" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
+    
+    # Add docker-compose shortcuts
+    export DC="docker-compose"
+    export D="docker"
+}
+
+# Kubernetes environment
+layout_k8s() {
+    local context=${1:-}
+    
+    if [[ -n $context ]]; then
+        export KUBECONFIG="$PWD/kubeconfig"
+        export KUBECTL_CONTEXT=$context
+    fi
+    
+    # Add kubectl shortcuts
+    export K="kubectl"
+    export KG="kubectl get"
+    export KD="kubectl describe"
+}
+
+# AWS environment
+layout_aws() {
+    local profile=${1:-default}
+    export AWS_PROFILE=$profile
+    export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+    
+    # Load AWS credentials if available
+    if [[ -f .aws/credentials ]]; then
+        export AWS_SHARED_CREDENTIALS_FILE="$PWD/.aws/credentials"
+    fi
+}
+
+# Generic dotenv loader with validation
+dotenv() {
+    local envfile=${1:-.env}
+    if [[ -f $envfile ]]; then
+        # Validate .env file format before loading
+        if grep -q '^[[:space:]]*[[:alpha:]][[:alnum:]_]*[[:space:]]*=' "$envfile"; then
+            source_env "$envfile"
+            log_status "Loaded environment from $envfile"
+        else
+            log_error "Invalid format in $envfile"
+        fi
+    fi
+}
+
+# Load secrets from encrypted files
+load_secrets() {
+    local secrets_file=".secrets"
+    if [[ -f "${secrets_file}.age" ]] && has age; then
+        age -d -i ~/.config/chezmoi/key.txt "${secrets_file}.age" > "$secrets_file"
+        source_env "$secrets_file"
+        rm "$secrets_file"
+        log_status "Loaded encrypted secrets"
+    elif [[ -f "$secrets_file" ]]; then
+        source_env "$secrets_file"
+        log_status "Loaded secrets from $secrets_file"
+    fi
+}
+
+# Development environment presets
+layout_webapp() {
+    layout_node
+    layout_docker
+    dotenv
+    
+    # Common web app environment
+    export PORT=${PORT:-3000}
+    export NODE_ENV=${NODE_ENV:-development}
+    export DEBUG=${DEBUG:-app:*}
+}
+
+layout_api() {
+    layout_node
+    layout_docker
+    dotenv
+    load_secrets
+    
+    # API-specific environment
+    export NODE_ENV=${NODE_ENV:-development}
+    export API_PORT=${API_PORT:-8000}
+    export LOG_LEVEL=${LOG_LEVEL:-info}
+}
+
+layout_fullstack() {
+    layout_webapp
+    layout_docker
+    
+    # Full-stack specific
+    export CLIENT_PORT=${CLIENT_PORT:-3000}
+    export SERVER_PORT=${SERVER_PORT:-8000}
+    export DATABASE_URL=${DATABASE_URL:-postgresql://localhost/$(basename "$PWD")_dev}
+}
+
+# Utility functions
+use_flake() {
+    # Nix flake support if available
+    if has nix; then
+        eval "$(nix print-dev-env)"
+    fi
+}
+
+# Enhanced logging
+log_status() {
+    if [[ -n "${DIRENV_LOG_FORMAT:-}" ]]; then
+        echo "$@" | direnv show_dump
+    else
+        echo "direnv: $@" >&2
+    fi
+}

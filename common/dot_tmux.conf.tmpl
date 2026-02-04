@@ -1,0 +1,238 @@
+# Modern Tmux Configuration
+# World-class terminal multiplexer with Catppuccin theme
+
+# ==========================
+# === General Settings ===
+# ==========================
+
+# Use Ctrl+Space as prefix (more comfortable than Ctrl+b)
+unbind C-b
+set -g prefix C-Space
+bind C-Space send-prefix
+
+# Enable mouse support
+set -g mouse on
+
+# Start windows and panes at 1, not 0
+set -g base-index 1
+set -g pane-base-index 1
+set-window-option -g pane-base-index 1
+
+# Renumber windows when one is closed
+set -g renumber-windows on
+
+# Increase scrollback buffer size from 2000 to 50000 lines
+set -g history-limit 50000
+
+# Increase tmux messages display duration from 750ms to 4s
+set -g display-time 4000
+
+# Refresh 'status-left' and 'status-right' more often from every 15s to 5s
+set -g status-interval 5
+
+# Enable focus events for better vim integration
+set -g focus-events on
+
+# Enable 24-bit color support
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",xterm-256color*:Tc"
+
+# Faster command sequences (no delay between prefix and command)
+set -s escape-time 10
+
+# Aggressive resize for better multi-client support
+setw -g aggressive-resize on
+
+# ==========================
+# === Key Bindings ===
+# ==========================
+
+# Reload configuration
+bind r source-file ~/.tmux.conf \; display-message "Tmux configuration reloaded!"
+
+# Quick window switching (Alt+number)
+bind -n M-1 select-window -t 1
+bind -n M-2 select-window -t 2
+bind -n M-3 select-window -t 3
+bind -n M-4 select-window -t 4
+bind -n M-5 select-window -t 5
+bind -n M-6 select-window -t 6
+bind -n M-7 select-window -t 7
+bind -n M-8 select-window -t 8
+bind -n M-9 select-window -t 9
+
+# Vim-like pane navigation
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# Smart pane switching with awareness of Vim splits
+# See: https://github.com/christoomey/vim-tmux-navigator
+is_vim="ps -o state= -o comm= -t '#{pane_tty}' \
+    | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'"
+bind-key -n 'C-h' if-shell "$is_vim" 'send-keys C-h'  'select-pane -L'
+bind-key -n 'C-j' if-shell "$is_vim" 'send-keys C-j'  'select-pane -D'
+bind-key -n 'C-k' if-shell "$is_vim" 'send-keys C-k'  'select-pane -U'
+bind-key -n 'C-l' if-shell "$is_vim" 'send-keys C-l'  'select-pane -R'
+
+# Pane resizing
+bind -r H resize-pane -L 2
+bind -r J resize-pane -D 2
+bind -r K resize-pane -U 2
+bind -r L resize-pane -R 2
+
+# Pane splitting with intuitive keys
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+unbind '"'
+unbind %
+
+# Window creation in current path
+bind c new-window -c "#{pane_current_path}"
+
+# Copy mode enhancements (vi-style)
+setw -g mode-keys vi
+bind-key -T copy-mode-vi v send-keys -X begin-selection
+bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"
+bind-key -T copy-mode-vi r send-keys -X rectangle-toggle
+
+# Quick session switching
+bind S choose-session
+
+# Synchronize panes toggle
+bind a set-window-option synchronize-panes\; display-message "synchronize-panes is now #{?pane_synchronized,on,off}"
+
+# ==========================
+# === Catppuccin Theme ===
+# ==========================
+
+# Catppuccin Mocha color palette
+thm_bg="#1e1e2e"
+thm_fg="#cdd6f4"
+thm_cyan="#89dceb"
+thm_black="#181825"
+thm_gray="#313244"
+thm_magenta="#cba6f7"
+thm_pink="#f5c2e7"
+thm_red="#f38ba8"
+thm_green="#a6e3a1"
+thm_yellow="#f9e2af"
+thm_blue="#89b4fa"
+thm_orange="#fab387"
+thm_black4="#585b70"
+
+# Status bar
+set -g status on
+set -g status-bg $thm_bg
+set -g status-fg $thm_fg
+set -g status-justify left
+set -g status-left-length 200
+set -g status-right-length 200
+
+# Window status
+setw -g window-status-activity-style "fg=$thm_fg,bg=$thm_bg,none"
+setw -g window-status-separator ""
+setw -g window-status-style "fg=$thm_fg,bg=$thm_bg,none"
+
+# Pane borders
+set -g pane-border-style "fg=$thm_gray"
+set -g pane-active-border-style "fg=$thm_blue"
+
+# Message styling
+set -g message-style "fg=$thm_bg,bg=$thm_yellow"
+set -g message-command-style "fg=$thm_bg,bg=$thm_yellow"
+
+# Copy mode styling
+setw -g mode-style "fg=$thm_pink,bg=$thm_black4"
+
+# Clock mode
+setw -g clock-mode-colour $thm_blue
+
+# ==========================
+# === Status Bar Design ===
+# ==========================
+
+# Left side of status bar
+set -g status-left "#[fg=$thm_bg,bg=$thm_blue,bold] #S #[fg=$thm_blue,bg=$thm_gray,nobold,nounderscore,noitalics]#[fg=$thm_fg,bg=$thm_gray] #(whoami) #[fg=$thm_gray,bg=$thm_bg]"
+
+# Window status format
+set -g window-status-format "#[fg=$thm_bg,bg=$thm_black4] #I #[fg=$thm_fg,bg=$thm_gray] #{b:pane_current_path} "
+set -g window-status-current-format "#[fg=$thm_bg,bg=$thm_orange] #I #[fg=$thm_fg,bg=$thm_bg] #{b:pane_current_path} "
+
+# Right side of status bar
+set -g status-right "#[fg=$thm_gray,bg=$thm_bg,nobold,nounderscore,noitalics]#[fg=$thm_fg,bg=$thm_gray] %Y-%m-%d #[fg=$thm_blue,bg=$thm_gray,nobold,nounderscore,noitalics]#[fg=$thm_bg,bg=$thm_blue,bold] %H:%M "
+
+# ==========================
+# === Plugin Configuration ===
+# ==========================
+
+# Plugin manager
+set -g @plugin 'tmux-plugins/tpm'
+
+# Essential plugins
+set -g @plugin 'tmux-plugins/tmux-sensible'
+set -g @plugin 'tmux-plugins/tmux-resurrect'
+set -g @plugin 'tmux-plugins/tmux-continuum'
+set -g @plugin 'tmux-plugins/tmux-yank'
+set -g @plugin 'christoomey/vim-tmux-navigator'
+
+# Additional useful plugins
+set -g @plugin 'tmux-plugins/tmux-copycat'
+set -g @plugin 'tmux-plugins/tmux-open'
+set -g @plugin 'laktak/extrakto'
+
+# Plugin settings
+set -g @resurrect-strategy-vim 'session'
+set -g @resurrect-strategy-nvim 'session'
+set -g @resurrect-capture-pane-contents 'on'
+set -g @continuum-restore 'on'
+set -g @continuum-boot 'on'
+{{- if eq .chezmoi.os "darwin" }}
+set -g @continuum-boot-options 'iterm'
+{{- end }}
+
+# Yank plugin settings
+{{- if eq .chezmoi.os "darwin" }}
+set -g @yank_selection 'clipboard'
+set -g @yank_selection_mouse 'clipboard'
+{{- else }}
+set -g @yank_selection 'primary'
+set -g @yank_selection_mouse 'clipboard'
+{{- end }}
+
+# Extrakto settings
+set -g @extrakto_key 'e'
+set -g @extrakto_copy_key 'tab'
+set -g @extrakto_insert_key 'enter'
+
+# ==========================
+# === Session Management ===
+# ==========================
+
+# Development session template
+bind D new-session -d -s dev \; \
+  send-keys 'cd ~/{{ if .work }}work{{ else }}projects{{ end }}' C-m \; \
+  new-window -n 'editor' \; \
+  send-keys 'nvim .' C-m \; \
+  new-window -n 'git' \; \
+  send-keys 'lazygit' C-m \; \
+  new-window -n 'shell' \; \
+  select-window -t 1
+
+# Quick session creation
+bind N command-prompt -p "New session name:" "new-session -d -s %%"
+
+# ==========================
+# === Local Configuration ===
+# ==========================
+
+# Load local tmux configuration if it exists
+if-shell "[ -f ~/.tmux.local.conf ]" 'source ~/.tmux.local.conf'
+
+# ==========================
+# === Plugin Initialization ===
+# ==========================
+
+# Initialize TMUX plugin manager (keep this line at the very bottom)
+run '~/.tmux/plugins/tpm/tpm'

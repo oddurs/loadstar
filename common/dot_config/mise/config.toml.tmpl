@@ -1,0 +1,92 @@
+# Mise Configuration - Universal Version Manager
+# Modern replacement for nvm, rbenv, pyenv, etc.
+
+# Global tool versions
+[tools]
+{{- if .personal }}
+node = "lts"
+python = "latest"
+go = "latest"
+rust = "latest"
+deno = "latest"
+bun = "latest"
+{{- end }}
+{{- if .work }}
+node = "18"  # LTS for stability
+python = "3.11"
+go = "1.21"
+java = "17"
+terraform = "latest"
+kubectl = "latest"
+{{- end }}
+
+# Plugin configuration
+[plugins]
+# Automatically install plugins for tools
+auto_install = true
+
+# Settings
+[settings]
+# Automatically install missing tools when entering directories
+auto_install = true
+
+# Use system SSL certificates
+use_system_ssl = true
+
+# Always add shims to PATH
+always_add_shims = true
+
+# Experimental features
+experimental = true
+
+# Plugin repositories
+[[plugins]]
+name = "nodejs"
+url = "https://github.com/asdf-vm/asdf-nodejs"
+
+[[plugins]]
+name = "python" 
+url = "https://github.com/danhper/asdf-python"
+
+[[plugins]]
+name = "golang"
+url = "https://github.com/kennyp/asdf-golang"
+
+[[plugins]]
+name = "rust"
+url = "https://github.com/code-lever/asdf-rust"
+
+{{- if .kubernetes }}
+[[plugins]]
+name = "kubectl"
+url = "https://github.com/asdf-community/asdf-kubectl"
+
+[[plugins]]
+name = "helm"
+url = "https://github.com/Antiarchitect/asdf-helm"
+
+[[plugins]]
+name = "terraform"
+url = "https://github.com/asdf-community/asdf-hashicorp"
+{{- end }}
+
+# Environment variables
+[env]
+# Node.js
+NODE_OPTIONS = "--max-old-space-size=4096"
+
+# Python
+PYTHONDONTWRITEBYTECODE = "1"
+PYTHONUNBUFFERED = "1"
+
+# Go
+GO111MODULE = "on"
+GOPROXY = "https://proxy.golang.org"
+
+# Rust
+CARGO_HOME = "~/.cargo"
+
+{{- if .work }}
+# Work-specific environment
+COMPANY_API_URL = "https://api.company.com"
+{{- end }}

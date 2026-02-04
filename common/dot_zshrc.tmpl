@@ -1,0 +1,375 @@
+# World-Class Zsh Configuration
+# Ultra-fast, modern shell with intelligent lazy loading
+
+# Performance measurement (comment out in production)
+# zmodload zsh/zprof
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# ==========================
+# === Environment Setup ===
+# ==========================
+
+# XDG Base Directory Specification
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+# Default programs
+export EDITOR="{{ .editor }}"
+export VISUAL="{{ .editor }}"
+export BROWSER="open"
+export TERMINAL="iterm2"
+
+# Language environment
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
+# History configuration
+export HISTFILE="$XDG_STATE_HOME/zsh/history"
+export HISTSIZE=1000000
+export SAVEHIST=1000000
+mkdir -p "$(dirname "$HISTFILE")"
+
+# Zsh options
+setopt EXTENDED_HISTORY          # Write the history file in the ':start:elapsed;command' format
+setopt SHARE_HISTORY             # Share history between all sessions
+setopt HIST_EXPIRE_DUPS_FIRST    # Expire a duplicate event first when trimming history
+setopt HIST_IGNORE_DUPS          # Do not record an event that was just recorded again
+setopt HIST_IGNORE_ALL_DUPS      # Delete an old recorded event if a new event is a duplicate
+setopt HIST_FIND_NO_DUPS         # Do not display a previously found event
+setopt HIST_IGNORE_SPACE         # Do not record an event starting with a space
+setopt HIST_SAVE_NO_DUPS         # Do not write a duplicate event to the history file
+setopt HIST_VERIFY               # Do not execute immediately upon history expansion
+setopt AUTO_PUSHD                # Make cd push the old directory onto the directory stack
+setopt PUSHD_IGNORE_DUPS         # Don't push multiple copies of the same directory
+setopt PUSHD_MINUS               # Exchanges the meanings of '+' and '-'
+setopt EXTENDED_GLOB             # Use extended globbing syntax
+setopt AUTO_CD                   # Auto change to a directory without typing cd
+setopt INTERACTIVE_COMMENTS      # Allow comments in interactive shells
+
+# ==========================
+# === Path Configuration ===
+# ==========================
+
+# Function to safely add to PATH
+path_prepend() {
+    [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]] && export PATH="$1:$PATH"
+}
+
+path_append() {
+    [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]] && export PATH="$PATH:$1"
+}
+
+# Core paths
+path_prepend "$HOME/.local/bin"
+path_prepend "$HOME/.cargo/bin"
+path_prepend "$HOME/.local/share/mise/shims"
+{{- if eq .chezmoi.os "darwin" }}
+path_prepend "/opt/homebrew/bin"
+path_prepend "/opt/homebrew/sbin"
+path_prepend "/usr/local/bin"
+{{- end }}
+
+# Language-specific paths
+path_append "$HOME/go/bin"
+path_append "$HOME/.npm-global/bin"
+
+# ==========================
+# === Tool Initialization ===
+# ==========================
+
+# Lazy loading function for heavy tools
+lazy_load() {
+    local tool_name="$1"
+    local load_command="$2"
+    
+    eval "function $tool_name() {
+        unfunction $tool_name
+        $load_command
+        $tool_name \"\$@\"
+    }"
+}
+
+# Modern tool aliases and replacements
+if command -v eza >/dev/null 2>&1; then
+    alias ls='eza --icons --git'
+    alias ll='eza -l --icons --git --header'
+    alias la='eza -la --icons --git --header'
+    alias tree='eza --tree --icons'
+    alias lt='eza --tree --level=2 --icons'
+fi
+
+if command -v bat >/dev/null 2>&1; then
+    alias cat='bat --style=auto'
+    alias less='bat --style=auto --paging=always'
+    export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+fi
+
+if command -v fd >/dev/null 2>&1; then
+    alias find='fd'
+fi
+
+if command -v ripgrep >/dev/null 2>&1; then
+    alias grep='rg'
+fi
+
+if command -v procs >/dev/null 2>&1; then
+    alias ps='procs'
+fi
+
+if command -v dust >/dev/null 2>&1; then
+    alias du='dust'
+fi
+
+if command -v duf >/dev/null 2>&1; then
+    alias df='duf'
+fi
+
+if command -v btop >/dev/null 2>&1; then
+    alias htop='btop'
+    alias top='btop'
+fi
+
+# Git aliases
+alias g='git'
+alias ga='git add'
+alias gaa='git add --all'
+alias gb='git branch'
+alias gc='git commit'
+alias gcm='git commit -m'
+alias gco='git checkout'
+alias gd='git diff'
+alias gl='git pull'
+alias gp='git push'
+alias gs='git status'
+alias gst='git status'
+alias glog='git log --oneline --graph --decorate'
+alias gac='git add --all && git commit -m'
+
+# Modern git workflow
+alias gpr='gh pr create'
+alias gpv='gh pr view'
+alias gpl='gh pr list'
+alias gis='gh issue list'
+
+# Development aliases
+alias dev='tmux new-session -A -s dev'
+alias code.='code .'
+alias v='nvim'
+alias vim='nvim'
+
+# Quick navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias ~='cd ~'
+alias -- -='cd -'
+
+# System
+alias reload='exec zsh'
+alias cls='clear'
+alias h='history'
+
+{{- if eq .chezmoi.os "darwin" }}
+# macOS specific
+alias o='open'
+alias pbcopy='pbcopy'
+alias pbpaste='pbpaste'
+alias flushdns='sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder'
+{{- else if eq .chezmoi.os "linux" }}
+# Linux specific
+alias o='xdg-open'
+alias pbcopy='xclip -selection clipboard'
+alias pbpaste='xclip -selection clipboard -o'
+{{- end }}
+
+# ==========================
+# === Tool Loading ===
+# ==========================
+
+# Starship prompt (fast initialization)
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init zsh)"
+fi
+
+# Zoxide (smart cd replacement)
+if command -v zoxide >/dev/null 2>&1; then
+    eval "$(zoxide init zsh)"
+    alias cd='z'
+fi
+
+# FZF (fuzzy finder)
+if command -v fzf >/dev/null 2>&1; then
+    # Use fd for FZF if available
+    if command -v fd >/dev/null 2>&1; then
+        export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+        export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+        export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+    fi
+    
+    # Catppuccin theme for FZF
+    export FZF_DEFAULT_OPTS="
+        --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8
+        --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc
+        --color=marker:#f5e0dc,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8
+        --height 40% --layout=reverse --border"
+    
+    # Load FZF key bindings and completion
+    source <(fzf --zsh) 2>/dev/null || true
+fi
+
+# Mise (version manager) - lazy load for performance
+if command -v mise >/dev/null 2>&1; then
+    export MISE_CONFIG_FILE="$XDG_CONFIG_HOME/mise/config.toml"
+    eval "$(mise activate zsh)"
+fi
+
+# Direnv (per-directory environments)
+if command -v direnv >/dev/null 2>&1; then
+    eval "$(direnv hook zsh)"
+fi
+
+# GitHub CLI completion
+if command -v gh >/dev/null 2>&1; then
+    lazy_load "gh_complete" "eval \"\$(gh completion -s zsh)\""
+    compdef gh_complete gh
+fi
+
+# ==========================
+# === Custom Functions ===
+# ==========================
+
+# Create and enter directory
+mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+
+# Extract archives
+extract() {
+    if [ -f "$1" ]; then
+        case $1 in
+            *.tar.bz2)   tar xjf "$1"     ;;
+            *.tar.gz)    tar xzf "$1"     ;;
+            *.bz2)       bunzip2 "$1"     ;;
+            *.rar)       unrar x "$1"     ;;
+            *.gz)        gunzip "$1"      ;;
+            *.tar)       tar xf "$1"      ;;
+            *.tbz2)      tar xjf "$1"     ;;
+            *.tgz)       tar xzf "$1"     ;;
+            *.zip)       unzip "$1"       ;;
+            *.Z)         uncompress "$1"  ;;
+            *.7z)        7z x "$1"        ;;
+            *)           echo "'$1' cannot be extracted via extract()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+# Find and kill process by name
+fkill() {
+    local pid
+    if command -v fzf >/dev/null 2>&1; then
+        pid=$(ps -ef | sed 1d | fzf -m | awk '{print $2}')
+        [ -n "$pid" ] && echo "$pid" | xargs kill -"${1:-9}"
+    else
+        echo "fzf is required for this function"
+    fi
+}
+
+# Git commit with AI-generated message (if available)
+gaic() {
+    if command -v ai >/dev/null 2>&1; then
+        local msg
+        msg=$(git diff --cached | ai "Write a concise git commit message for these changes:")
+        echo "Suggested commit message: $msg"
+        read -q "REPLY?Use this message? (y/n): "
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            git commit -m "$msg"
+        else
+            git commit
+        fi
+    else
+        git commit
+    fi
+}
+
+# Project initialization
+init-project() {
+    local name="${1:-$(basename "$PWD")}"
+    git init
+    echo "# $name" > README.md
+    echo "node_modules/\n.env\n.DS_Store" > .gitignore
+    git add .
+    git commit -m "Initial commit"
+    echo "Project '$name' initialized!"
+}
+
+# Quick server
+serve() {
+    local port="${1:-8000}"
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -m http.server "$port"
+    elif command -v python >/dev/null 2>&1; then
+        python -m SimpleHTTPServer "$port"
+    else
+        echo "Python not found"
+    fi
+}
+
+# ==========================
+# === Completion Setup ===
+# ==========================
+
+# Initialize completion system
+autoload -Uz compinit
+
+# Only regenerate compdump once a day
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+    compinit -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
+else
+    compinit -C -d "$XDG_CACHE_HOME/zsh/zcompdump-$ZSH_VERSION"
+fi
+
+# Completion options
+setopt COMPLETE_IN_WORD    # Complete from both ends of a word
+setopt ALWAYS_TO_END       # Move cursor to the end of a completed word
+setopt PATH_DIRS           # Perform path search even on command names with slashes
+setopt AUTO_MENU           # Show completion menu on a successive tab press
+setopt AUTO_LIST           # Automatically list choices on ambiguous completion
+setopt AUTO_PARAM_SLASH    # If completed parameter is a directory, add a trailing slash
+
+# Completion styling
+zstyle ':completion:*' menu select
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' format '%F{blue}-- %d --%f'
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' special-dirs true
+zstyle ':completion:*' squeeze-slashes true
+
+# ==========================
+# === Local Customization ===
+# ==========================
+
+# Load local customizations if they exist
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
+
+# Welcome message
+if [[ "$TERM_PROGRAM" != "vscode" ]] && [[ -t 1 ]]; then
+    echo "🚀 World-Class Development Environment Loaded!"
+    if command -v mise >/dev/null 2>&1; then
+        echo "📋 Active runtimes: $(mise current 2>/dev/null | tr '\n' ' ')"
+    fi
+    echo ""
+fi
+
+# Performance measurement (uncomment to debug)
+# zprof

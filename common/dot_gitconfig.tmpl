@@ -1,0 +1,266 @@
+# Modern Git Configuration
+# World-class git experience with delta diff and enhanced workflow
+
+[user]
+    name = "{{ .name }}"
+    email = "{{ .email }}"
+    {{- if .work }}
+    # Work-specific signing key
+    signingkey = ~/.ssh/work_signing_key.pub
+    {{- else }}
+    # Personal signing key  
+    signingkey = ~/.ssh/id_ed25519.pub
+    {{- end }}
+
+[core]
+    editor = "{{ .editor }}"
+    autocrlf = input
+    pager = delta
+    excludesfile = ~/.config/git/ignore
+    attributesfile = ~/.config/git/attributes
+    # Use commit message template
+    template = ~/.config/git/commit_template
+
+[init]
+    defaultBranch = main
+
+[push]
+    default = simple
+    autoSetupRemote = true
+    # Sign all pushes
+    gpgSign = if-asked
+
+[pull]
+    rebase = true
+    ff = only
+
+[rebase]
+    autoStash = true
+    updateRefs = true
+
+[merge]
+    tool = nvimdiff
+    conflictstyle = zdiff3
+
+[diff]
+    tool = nvimdiff
+    algorithm = histogram
+    colorMoved = default
+
+[interactive]
+    diffFilter = delta --color-only --features=interactive
+
+[delta]
+    # Catppuccin Mocha theme
+    navigate = true
+    light = false
+    side-by-side = false
+    line-numbers = true
+    syntax-theme = Catppuccin-mocha
+    features = catppuccin-mocha
+    
+    # Performance
+    max-line-length = 1024
+    
+    # Line numbers
+    line-numbers-left-format = "{nm:>4}┊"
+    line-numbers-right-format = "{np:>4}│"
+    line-numbers-left-style = "#6c7086"
+    line-numbers-right-style = "#6c7086"
+    line-numbers-minus-style = "#f38ba8"
+    line-numbers-plus-style = "#a6e3a1"
+    line-numbers-zero-style = "#6c7086"
+
+[delta "catppuccin-mocha"]
+    # Colors
+    minus-style = "syntax #3e2731"
+    minus-non-emph-style = "syntax #3e2731"
+    minus-emph-style = "syntax #6e3244"
+    plus-style = "syntax #233a2e"
+    plus-non-emph-style = "syntax #233a2e"
+    plus-emph-style = "syntax #2c5530"
+    
+    # File headers
+    file-style = "#f9e2af bold"
+    file-decoration-style = "#f9e2af ul"
+    file-added-label = [+]
+    file-copied-label = [C]
+    file-modified-label = [M]
+    file-removed-label = [-]
+    file-renamed-label = [R]
+    
+    # Hunk headers
+    hunk-header-style = "file line-number syntax"
+    hunk-header-decoration-style = "#89b4fa box"
+
+[commit]
+    # Sign all commits
+    gpgsign = true
+    # Show diff in commit message
+    verbose = true
+
+[tag]
+    # Sign all tags
+    gpgsign = true
+
+[log]
+    # Show signatures in log
+    showSignature = false
+    # Better date format
+    date = iso
+
+[status]
+    # Show untracked files in directories
+    showUntrackedFiles = all
+    # Show submodule summary
+    submoduleSummary = true
+
+[branch]
+    # Setup tracking when creating new branches
+    autoSetupRebase = always
+    # Sort branches by most recent commit
+    sort = -committerdate
+
+[fetch]
+    # Automatically prune deleted remote branches
+    prune = true
+    # Fetch all tags
+    tags = true
+
+[remote]
+    # Push to current branch by default
+    pushDefault = current
+
+# URL rewrites for better performance and security
+[url "git@github.com:"]
+    insteadOf = "https://github.com/"
+    pushInsteadOf = "https://github.com/"
+
+[url "git@gitlab.com:"]
+    insteadOf = "https://gitlab.com/"
+    pushInsteadOf = "https://gitlab.com/"
+
+# Enhanced aliases
+[alias]
+    # Status and info
+    s = status --short --branch
+    st = status
+    info = remote show origin
+    
+    # Branch management
+    b = branch
+    ba = branch --all
+    bd = branch --delete
+    bD = branch --delete --force
+    co = checkout
+    cb = checkout -b
+    sw = switch
+    swc = switch -c
+    
+    # Commit shortcuts
+    c = commit
+    cm = commit --message
+    ca = commit --all
+    cam = commit --all --message
+    amend = commit --amend
+    amendn = commit --amend --no-edit
+    fix = commit --fixup
+    sq = commit --squash
+    
+    # Add shortcuts
+    a = add
+    aa = add --all
+    ap = add --patch
+    au = add --update
+    
+    # Diff and show
+    d = diff
+    ds = diff --staged
+    dc = diff --cached
+    dw = diff --word-diff
+    dt = difftool
+    show-files = show --pretty="" --name-only
+    
+    # Log aliases
+    l = log --oneline --graph --decorate
+    ll = log --oneline --graph --decorate --all
+    lg = log --graph --pretty=format:'%C(red)%h%C(reset) -%C(yellow)%d%C(reset) %s %C(green)(%cr) %C(bold blue)<%an>%C(reset)' --abbrev-commit --date=relative
+    lga = log --graph --pretty=format:'%C(red)%h%C(reset) -%C(yellow)%d%C(reset) %s %C(green)(%cr) %C(bold blue)<%an>%C(reset)' --abbrev-commit --date=relative --all
+    hist = log --pretty=format:'%C(yellow)%h%Creset %C(bold blue)%an%Creset %C(bold green)(%cr)%Creset %C(bold red)%d%Creset %s' --graph --date=short
+    
+    # Remote operations
+    f = fetch
+    fa = fetch --all
+    p = push
+    pf = push --force-with-lease
+    pu = push --set-upstream origin HEAD
+    pl = pull
+    
+    # Stash operations
+    st-save = stash push --include-untracked
+    st-pop = stash pop
+    st-list = stash list
+    st-show = stash show --patch
+    
+    # Rebase operations
+    rb = rebase
+    rbi = rebase --interactive
+    rbc = rebase --continue
+    rba = rebase --abort
+    
+    # Reset operations
+    unstage = reset HEAD --
+    undo = reset HEAD~1 --mixed
+    hard-undo = reset HEAD~1 --hard
+    
+    # Cleanup operations
+    cleanup = "!git branch --merged | grep -v '\\*\\|master\\|main\\|develop' | xargs -n 1 git branch -d"
+    obliterate = "!sh -c 'git branch -D $1 && git push origin :$1' -"
+    
+    # Workflow shortcuts
+    save = "!git add -A && git commit -m 'SAVEPOINT'"
+    wip = "!git add -A && git commit -m 'WIP'"
+    snapshot = "!git stash push --include-untracked -m 'snapshot: $(date)' && git stash apply 'stash@{0}'"
+    
+    # GitHub workflow (requires gh CLI)
+    pr = "!gh pr create"
+    prs = "!gh pr status"
+    prv = "!gh pr view"
+    prl = "!gh pr list"
+    
+    # Find and search
+    find = "!git ls-files | grep -i"
+    grep = grep -Ii
+    search = "!f() { git log --grep=\"$1\" --oneline; }; f"
+    who = shortlog --numbered --summary --email
+    
+    # Statistics and analysis
+    stats = shortlog --numbered --summary
+    activity = "!git for-each-ref --format='%(refname:short) %(committerdate)' refs/heads | sort -k2 -r"
+    recent = for-each-ref --sort=-committerdate --format='%(committerdate:relative) %(refname:short)' refs/heads
+    
+    # Maintenance
+    optimize = "!git gc --aggressive && git prune && git fsck"
+    
+# Include work-specific git configuration
+{{- if .work }}
+[includeIf "gitdir:~/work/"]
+    path = ~/.config/git/config.work
+{{- end }}
+
+# Include personal projects configuration  
+{{- if .personal }}
+[includeIf "gitdir:~/projects/personal/"]
+    path = ~/.config/git/config.personal
+{{- end }}
+
+# GitHub-specific settings
+[hub]
+    protocol = ssh
+
+[github]
+    user = "{{ .username }}"
+
+# GitLab-specific settings
+[gitlab]
+    user = "{{ .username }}"
