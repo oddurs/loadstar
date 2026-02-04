@@ -80,7 +80,7 @@ impl Widget for &MatrixRain {
                             .fg(Color::White)
                             .add_modifier(Modifier::BOLD)
                     } else if dist_from_head < 3 {
-                        Style::default().fg(Color::LightGreen)
+                        Style::default().fg(Theme::GREEN)
                     } else {
                         let brightness = 255 - ((dist_from_head as u8).saturating_mul(20));
                         Style::default().fg(Color::Rgb(0, brightness, 0))
@@ -166,50 +166,166 @@ impl Spinner {
     }
 }
 
-/// Color scheme for the hacker theme
+// ═══════════════════════════════════════════════════════════════════════
+//  Theme — Catppuccin Mocha meets Commodore 64
+//
+//  Catppuccin gives us a refined palette that reads well on dark
+//  terminals. We keep the green-phosphor hacker energy but use
+//  it as an accent rather than painting everything in it.
+// ═══════════════════════════════════════════════════════════════════════
+
+pub struct Theme;
+
+#[allow(dead_code)]
+impl Theme {
+    // ─── Catppuccin Mocha base ─────────────────────────────────────
+    pub const BASE: Color = Color::Rgb(30, 30, 46); // #1e1e2e
+    pub const MANTLE: Color = Color::Rgb(24, 24, 37); // #181825
+    pub const CRUST: Color = Color::Rgb(17, 17, 27); // #11111b
+
+    pub const SURFACE0: Color = Color::Rgb(49, 50, 68); // #313244
+    pub const SURFACE1: Color = Color::Rgb(69, 71, 90); // #45475a
+    pub const SURFACE2: Color = Color::Rgb(88, 91, 112); // #585b70
+
+    pub const TEXT: Color = Color::Rgb(205, 214, 244); // #cdd6f4
+    pub const SUBTEXT1: Color = Color::Rgb(186, 194, 222); // #bac2de
+    pub const SUBTEXT0: Color = Color::Rgb(166, 173, 200); // #a6adc8
+    pub const OVERLAY2: Color = Color::Rgb(147, 153, 178); // #9399b2
+    pub const OVERLAY1: Color = Color::Rgb(127, 132, 156); // #7f849c
+    pub const OVERLAY0: Color = Color::Rgb(108, 112, 134); // #6c7086
+
+    // ─── Catppuccin accent colors ──────────────────────────────────
+    pub const GREEN: Color = Color::Rgb(166, 227, 161); // #a6e3a1
+    pub const BLUE: Color = Color::Rgb(137, 180, 250); // #89b4fa
+    pub const LAVENDER: Color = Color::Rgb(180, 190, 254); // #b4befe
+    pub const MAUVE: Color = Color::Rgb(203, 166, 247); // #cba6f7
+    pub const PEACH: Color = Color::Rgb(250, 179, 135); // #fab387
+    pub const RED: Color = Color::Rgb(243, 139, 168); // #f38ba8
+    pub const YELLOW: Color = Color::Rgb(249, 226, 175); // #f9e2af
+    pub const TEAL: Color = Color::Rgb(148, 226, 213); // #94e2d5
+    pub const SKY: Color = Color::Rgb(137, 220, 235); // #89dceb
+
+    // ─── Phosphor green — the C64 accent ───────────────────────────
+    pub const PHOSPHOR: Color = Color::Rgb(0, 255, 65);
+    pub const PHOSPHOR_DIM: Color = Color::Rgb(0, 150, 40);
+}
+
+/// Style helpers — the old HackerTheme API, now backed by Catppuccin
 pub struct HackerTheme;
 
+#[allow(dead_code)]
 impl HackerTheme {
-    pub const FG: Color = Color::Rgb(0, 255, 65);
-    pub const FG_DIM: Color = Color::Rgb(0, 150, 40);
-    pub const ACCENT: Color = Color::Cyan;
-    pub const SELECTION: Color = Color::Rgb(30, 60, 40);
+    // Keep these aliases for any code that references them directly
+    pub const FG: Color = Theme::TEXT;
+    pub const FG_DIM: Color = Theme::OVERLAY0;
+    pub const ACCENT: Color = Theme::BLUE;
+    pub const SELECTION: Color = Color::Rgb(49, 50, 68); // SURFACE0
 
+    // ─── Text hierarchy ────────────────────────────────────────────
     pub fn primary() -> Style {
-        Style::default().fg(Self::FG)
+        Style::default().fg(Theme::TEXT)
     }
 
     pub fn dim() -> Style {
-        Style::default().fg(Self::FG_DIM)
+        Style::default().fg(Theme::OVERLAY0)
+    }
+
+    pub fn muted() -> Style {
+        Style::default().fg(Theme::SURFACE2)
     }
 
     pub fn accent() -> Style {
-        Style::default().fg(Self::ACCENT)
+        Style::default().fg(Theme::BLUE)
     }
 
-    pub fn selected() -> Style {
-        Style::default().bg(Self::SELECTION).fg(Self::FG)
+    pub fn phosphor() -> Style {
+        Style::default().fg(Theme::PHOSPHOR)
     }
 
+    // ─── Semantic ──────────────────────────────────────────────────
     pub fn error() -> Style {
-        Style::default().fg(Color::Red)
+        Style::default().fg(Theme::RED)
     }
 
     pub fn success() -> Style {
-        Style::default().fg(Color::LightGreen)
+        Style::default().fg(Theme::GREEN)
     }
 
     pub fn warning() -> Style {
-        Style::default().fg(Color::Yellow)
+        Style::default().fg(Theme::YELLOW)
     }
 
-    pub fn title() -> Style {
+    pub fn info() -> Style {
+        Style::default().fg(Theme::SKY)
+    }
+
+    // ─── Borders — 3 states ────────────────────────────────────────
+    pub fn border() -> Style {
+        Style::default().fg(Theme::SURFACE1)
+    }
+
+    pub fn border_focused() -> Style {
+        Style::default().fg(Theme::BLUE)
+    }
+
+    pub fn border_dim() -> Style {
+        Style::default().fg(Theme::SURFACE0)
+    }
+
+    // ─── Selection and focus ───────────────────────────────────────
+    pub fn selected() -> Style {
         Style::default()
-            .fg(Self::ACCENT)
+            .bg(Theme::SURFACE0)
+            .fg(Theme::TEXT)
             .add_modifier(Modifier::BOLD)
     }
 
-    pub fn border() -> Style {
-        Style::default().fg(Self::FG_DIM)
+    pub fn selected_accent() -> Style {
+        Style::default()
+            .bg(Theme::SURFACE0)
+            .fg(Theme::GREEN)
+            .add_modifier(Modifier::BOLD)
+    }
+
+    // ─── Title and chrome ──────────────────────────────────────────
+    pub fn title() -> Style {
+        Style::default()
+            .fg(Theme::LAVENDER)
+            .add_modifier(Modifier::BOLD)
+    }
+
+    pub fn brand() -> Style {
+        Style::default()
+            .fg(Theme::PHOSPHOR)
+            .add_modifier(Modifier::BOLD)
+    }
+
+    pub fn badge() -> Style {
+        Style::default()
+            .fg(Theme::MAUVE)
+            .add_modifier(Modifier::BOLD)
+    }
+
+    pub fn key_hint() -> Style {
+        Style::default().fg(Theme::SUBTEXT0)
+    }
+
+    pub fn key_hint_key() -> Style {
+        Style::default()
+            .fg(Theme::LAVENDER)
+            .add_modifier(Modifier::BOLD)
+    }
+
+    // ─── Backgrounds ───────────────────────────────────────────────
+    pub fn bg() -> Style {
+        Style::default().bg(Theme::CRUST)
+    }
+
+    pub fn bg_surface() -> Style {
+        Style::default().bg(Theme::BASE)
+    }
+
+    pub fn bg_elevated() -> Style {
+        Style::default().bg(Theme::SURFACE0)
     }
 }
