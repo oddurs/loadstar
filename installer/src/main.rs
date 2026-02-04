@@ -54,6 +54,7 @@ pub struct App {
     pub install_failed: usize,
     pub install_skipped: usize,
     pub current_package: Option<String>,
+    pub package_started_at: Option<Instant>,
     pub is_installing: bool,
     pub install_receiver: Option<mpsc::Receiver<InstallMessage>>,
     pub install_thread: Option<std::thread::JoinHandle<()>>,
@@ -150,6 +151,7 @@ impl App {
             install_failed: 0,
             install_skipped: 0,
             current_package: None,
+            package_started_at: None,
             is_installing: false,
             install_receiver: None,
             install_thread: None,
@@ -660,11 +662,13 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> 
                         }
                         InstallMessage::PackageStart { name, method } => {
                             app.current_package = Some(name.clone());
+                            app.package_started_at = Some(Instant::now());
                             app.install_log
                                 .push(format!("[INSTALL] {} ({})", name, method));
                         }
                         InstallMessage::PackageSuccess { name, duration_ms } => {
                             app.current_package = None;
+                            app.package_started_at = None;
                             app.install_log.push(format!(
                                 "[OK] {} ({:.1}s)",
                                 name,
@@ -675,6 +679,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> 
                         }
                         InstallMessage::PackageSkipped { name, reason } => {
                             app.current_package = None;
+                            app.package_started_at = None;
                             app.install_log
                                 .push(format!("[SKIP] {} — {}", name, reason));
                             app.install_completed += 1;
@@ -682,6 +687,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> 
                         }
                         InstallMessage::PackageFailed { name, error } => {
                             app.current_package = None;
+                            app.package_started_at = None;
                             app.install_log.push(format!("[FAIL] {} — {}", name, error));
                             app.install_completed += 1;
                             app.install_failed += 1;

@@ -581,12 +581,32 @@ fn render_install(frame: &mut Frame, app: &mut App, area: Rect) {
     // Status line — current package + counters
     let status_area = centered_rect(80, 100, chunks[2]);
     let current = app.current_package.as_deref().unwrap_or("Preparing...");
+    let elapsed_str = if let Some(started) = app.package_started_at {
+        let secs = started.elapsed().as_secs();
+        if secs >= 60 {
+            format!(" {}m{:02}s", secs / 60, secs % 60)
+        } else {
+            format!(" {}s", secs)
+        }
+    } else {
+        String::new()
+    };
+    let elapsed_style = if app
+        .package_started_at
+        .map(|s| s.elapsed().as_secs() >= 30)
+        .unwrap_or(false)
+    {
+        HackerTheme::warning()
+    } else {
+        HackerTheme::dim()
+    };
     let status_line = Line::from(vec![
         Span::styled(
             format!("{} ", app.spinner.current()),
             Style::default().fg(Color::Yellow),
         ),
         Span::styled(current, HackerTheme::primary()),
+        Span::styled(elapsed_str, elapsed_style),
         Span::styled("  │  ", HackerTheme::dim()),
         Span::styled(format!("{}", app.install_succeeded), HackerTheme::success()),
         Span::styled(" ok", HackerTheme::dim()),
