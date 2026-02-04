@@ -622,12 +622,9 @@ fn main() -> Result<()> {
         return Err(e);
     }
 
-    // Print completion message
+    // Print minimal post-TUI message
     if app.wizard.phase == WizardPhase::Complete {
-        println!(
-            "\n{}",
-            include_str!("../assets/complete.txt").trim_matches('\n')
-        );
+        println!("\n  LOAD\"*\",8,1 — READY.\n");
     }
 
     Ok(())

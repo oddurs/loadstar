@@ -748,7 +748,7 @@ fn render_complete(frame: &mut Frame, app: &mut App, area: Rect) {
     // Matrix rain background — callback to the boot screen
     frame.render_widget(&app.matrix_rain, area);
 
-    let center = centered_rect(65, 70, area);
+    let center = centered_rect(60, 65, area);
     frame.render_widget(Clear, center);
 
     let block = Block::default()
@@ -762,43 +762,64 @@ fn render_complete(frame: &mut Frame, app: &mut App, area: Rect) {
 
     let has_failures = app.install_failed > 0;
 
-    let mut text = vec![
-        Line::from(""),
-        Line::from(Span::styled(
-            "  LOAD\"*\",8,1",
-            Style::default()
-                .fg(Theme::PHOSPHOR)
-                .add_modifier(Modifier::BOLD),
-        )),
-        Line::from(Span::styled(
-            "  SEARCHING FOR *",
-            Style::default().fg(Theme::GREEN),
-        )),
-        Line::from(Span::styled("  LOADING", Style::default().fg(Theme::GREEN))),
-        Line::from(""),
-    ];
+    let mut text: Vec<Line> = Vec::new();
 
-    // Summary bar
+    // ─── C64 header ─────────────────────────────────────────────
+    text.push(Line::from(""));
+    text.push(Line::from(Span::styled(
+        "    LOAD\"*\",8,1",
+        Style::default()
+            .fg(Theme::PHOSPHOR)
+            .add_modifier(Modifier::BOLD),
+    )));
+    text.push(Line::from(Span::styled(
+        "    SEARCHING FOR *",
+        Style::default().fg(Theme::PHOSPHOR_DIM),
+    )));
+    text.push(Line::from(Span::styled(
+        "    LOADING",
+        Style::default().fg(Theme::PHOSPHOR_DIM),
+    )));
+    text.push(Line::from(""));
+
+    // ─── Divider ────────────────────────────────────────────────
+    text.push(Line::from(Span::styled(
+        "    ────────────────────────────────────────",
+        Style::default().fg(Theme::SURFACE1),
+    )));
+    text.push(Line::from(""));
+
+    // ─── Summary stats — prominent ──────────────────────────────
     text.push(Line::from(vec![
-        Span::styled("  Installed ", HackerTheme::dim()),
+        Span::styled("    ", Style::default()),
         Span::styled(
             format!("{}", app.install_succeeded),
             Style::default()
                 .fg(Theme::GREEN)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled("  Skipped ", HackerTheme::dim()),
+        Span::styled(" installed", Style::default().fg(Theme::SUBTEXT0)),
+        Span::styled("   ", Style::default()),
         Span::styled(
             format!("{}", app.install_skipped),
             Style::default().fg(Theme::YELLOW),
         ),
-        Span::styled("  Failed ", HackerTheme::dim()),
+        Span::styled(" skipped", Style::default().fg(Theme::SUBTEXT0)),
+        Span::styled("   ", Style::default()),
         Span::styled(
             format!("{}", app.install_failed),
             if has_failures {
                 Style::default().fg(Theme::RED).add_modifier(Modifier::BOLD)
             } else {
-                HackerTheme::dim()
+                Style::default().fg(Theme::SURFACE2)
+            },
+        ),
+        Span::styled(
+            " failed",
+            if has_failures {
+                Style::default().fg(Theme::RED)
+            } else {
+                Style::default().fg(Theme::SURFACE2)
             },
         ),
     ]));
@@ -806,20 +827,65 @@ fn render_complete(frame: &mut Frame, app: &mut App, area: Rect) {
 
     if has_failures {
         text.push(Line::from(Span::styled(
-            "  ?PACKAGE ERROR  READY.",
+            "    ?PACKAGE ERROR  — check logs above",
             Style::default().fg(Theme::RED),
         )));
         text.push(Line::from(""));
     }
 
+    // ─── Config files generated ─────────────────────────────────
+    let config_count: usize = [
+        true, // .gitconfig always
+        app.wizard.shell_config.shell == crate::wizard::ShellChoice::Zsh,
+        app.wizard.shell_config.prompt == crate::wizard::PromptChoice::Starship
+            || app.wizard.selected_apps.contains("starship"),
+        app.wizard.shell_config.multiplexer == Some(crate::wizard::MultiplexerChoice::Tmux)
+            || app.wizard.selected_apps.contains("tmux"),
+        true, // .editorconfig always
+    ]
+    .iter()
+    .filter(|&&b| b)
+    .count();
+
+    text.push(Line::from(vec![
+        Span::styled("    ", Style::default()),
+        Span::styled(
+            format!("{}", config_count),
+            Style::default()
+                .fg(Theme::LAVENDER)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            " config files generated",
+            Style::default().fg(Theme::SUBTEXT0),
+        ),
+    ]));
+    text.push(Line::from(""));
+
+    // ─── Divider ────────────────────────────────────────────────
     text.push(Line::from(Span::styled(
-        "  Next steps:",
-        Style::default().fg(Theme::SUBTEXT1),
+        "    ────────────────────────────────────────",
+        Style::default().fg(Theme::SURFACE1),
     )));
+    text.push(Line::from(""));
+
+    // ─── Next steps ─────────────────────────────────────────────
     text.push(Line::from(Span::styled(
-        "    exec $SHELL",
-        Style::default().fg(Theme::OVERLAY2),
+        "    NEXT STEPS",
+        Style::default()
+            .fg(Theme::LAVENDER)
+            .add_modifier(Modifier::BOLD),
     )));
+    text.push(Line::from(""));
+
+    text.push(Line::from(vec![
+        Span::styled("      ", Style::default()),
+        Span::styled("1 ", Style::default().fg(Theme::SURFACE2)),
+        Span::styled("exec $SHELL", Style::default().fg(Theme::TEXT)),
+        Span::styled("  — reload your shell", HackerTheme::dim()),
+    ]));
+
+    let mut step = 2;
 
     if app.wizard.selected_apps.contains("gh")
         && !app
@@ -827,34 +893,55 @@ fn render_complete(frame: &mut Frame, app: &mut App, area: Rect) {
             .iter()
             .any(|l| l.contains("Already authenticated"))
     {
-        text.push(Line::from(Span::styled(
-            "    gh auth login",
-            Style::default().fg(Theme::OVERLAY2),
-        )));
+        text.push(Line::from(vec![
+            Span::styled("      ", Style::default()),
+            Span::styled(format!("{} ", step), Style::default().fg(Theme::SURFACE2)),
+            Span::styled("gh auth login", Style::default().fg(Theme::TEXT)),
+            Span::styled("  — authenticate GitHub CLI", HackerTheme::dim()),
+        ]));
+        step += 1;
     }
 
-    if app.wizard.selected_apps.contains("starship") {
-        text.push(Line::from(Span::styled(
-            "    which starship",
-            Style::default().fg(Theme::OVERLAY2),
-        )));
+    if app.wizard.generate_ssh_key
+        && app
+            .install_log
+            .iter()
+            .any(|l| l.contains("SSH key generated"))
+    {
+        text.push(Line::from(vec![
+            Span::styled("      ", Style::default()),
+            Span::styled(format!("{} ", step), Style::default().fg(Theme::SURFACE2)),
+            Span::styled("ssh -T git@github.com", Style::default().fg(Theme::TEXT)),
+            Span::styled("  — test SSH connection", HackerTheme::dim()),
+        ]));
+        step += 1;
     }
+
+    // Suppress unused variable warning — step is intentionally incremented for future use
+    let _ = step;
 
     text.push(Line::from(""));
+
+    // ─── READY. — the sign-off ──────────────────────────────────
     text.push(Line::from(Span::styled(
-        "  READY.",
+        "    ────────────────────────────────────────",
+        Style::default().fg(Theme::SURFACE1),
+    )));
+    text.push(Line::from(""));
+    text.push(Line::from(Span::styled(
+        "    READY.",
         Style::default()
             .fg(Theme::PHOSPHOR)
             .add_modifier(Modifier::BOLD),
     )));
     text.push(Line::from(Span::styled(
-        "  █",
+        "    █",
         Style::default().fg(Theme::PHOSPHOR),
     )));
     text.push(Line::from(""));
     text.push(Line::from(Span::styled(
-        "  Press ENTER or q to exit.",
-        HackerTheme::muted(),
+        "    Press ENTER or q to exit",
+        Style::default().fg(Theme::SURFACE2),
     )));
 
     let paragraph = Paragraph::new(text);
