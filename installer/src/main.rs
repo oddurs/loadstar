@@ -53,6 +53,8 @@ pub struct App {
     pub install_succeeded: usize,
     pub install_failed: usize,
     pub install_skipped: usize,
+    pub failed_packages: Vec<(String, String)>,  // (name, error)
+    pub skipped_packages: Vec<(String, String)>, // (name, reason)
     pub current_package: Option<String>,
     pub package_started_at: Option<Instant>,
     pub is_installing: bool,
@@ -150,6 +152,8 @@ impl App {
             install_succeeded: 0,
             install_failed: 0,
             install_skipped: 0,
+            failed_packages: Vec::new(),
+            skipped_packages: Vec::new(),
             current_package: None,
             package_started_at: None,
             is_installing: false,
@@ -562,6 +566,8 @@ impl App {
         self.is_installing = true;
         self.install_progress = 0.0;
         self.install_completed = 0;
+        self.failed_packages.clear();
+        self.skipped_packages.clear();
         self.install_log.clear();
         self.install_log
             .push("[INIT] Starting installation sequence...".to_string());
@@ -679,6 +685,8 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> 
                             app.package_started_at = None;
                             app.install_log
                                 .push(format!("[SKIP] {} — {}", name, reason));
+                            app.skipped_packages
+                                .push((name.clone(), reason.clone()));
                             app.install_completed += 1;
                             app.install_skipped += 1;
                         }
@@ -686,6 +694,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<Stdout>>, app: &mut App) -> 
                             app.current_package = None;
                             app.package_started_at = None;
                             app.install_log.push(format!("[FAIL] {} — {}", name, error));
+                            app.failed_packages.push((name.clone(), error.clone()));
                             app.install_completed += 1;
                             app.install_failed += 1;
                         }

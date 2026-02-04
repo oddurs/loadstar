@@ -825,11 +825,43 @@ fn render_complete(frame: &mut Frame, app: &mut App, area: Rect) {
     ]));
     text.push(Line::from(""));
 
-    if has_failures {
-        text.push(Line::from(Span::styled(
-            "    ?PACKAGE ERROR  — check logs above",
-            Style::default().fg(Theme::RED),
-        )));
+    // ─── Failed packages ─────────────────────────────────────────
+    if !app.failed_packages.is_empty() {
+        for (name, error) in &app.failed_packages {
+            text.push(Line::from(vec![
+                Span::styled("    ✗ ", Style::default().fg(Theme::RED)),
+                Span::styled(
+                    name.as_str(),
+                    Style::default()
+                        .fg(Theme::RED)
+                        .add_modifier(Modifier::BOLD),
+                ),
+                Span::styled(format!("  {}", error), HackerTheme::dim()),
+            ]));
+        }
+        text.push(Line::from(""));
+    }
+
+    // ─── Skipped packages ───────────────────────────────────────
+    if !app.skipped_packages.is_empty() {
+        // Show up to 5, then summarize
+        let show_count = app.skipped_packages.len().min(5);
+        for (name, reason) in app.skipped_packages.iter().take(show_count) {
+            text.push(Line::from(vec![
+                Span::styled("    ○ ", Style::default().fg(Theme::YELLOW)),
+                Span::styled(name.as_str(), Style::default().fg(Theme::YELLOW)),
+                Span::styled(format!("  {}", reason), HackerTheme::dim()),
+            ]));
+        }
+        if app.skipped_packages.len() > 5 {
+            text.push(Line::from(Span::styled(
+                format!(
+                    "    … and {} more already installed",
+                    app.skipped_packages.len() - 5
+                ),
+                HackerTheme::dim(),
+            )));
+        }
         text.push(Line::from(""));
     }
 
